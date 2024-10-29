@@ -1,0 +1,48 @@
+{
+  "name": "websockects",
+  "version": "1.0.0",
+  "description": "A simple CAP project.",
+  "repository": "<Add your repository here>",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@sap/cds": "^6.8.4",
+    "@sap/cds-odata-v2-adapter-proxy": "^1.9.21",
+    "@sap/hana-client": "^2.22.29",
+    "@sap/hdi-deploy": "^5.3.2",
+    "axios": "^1.7.7",
+    "express": "^4",
+    "hdb": "^0.19.10",
+    "ws": "^8.18.0"
+  },
+  "scripts": {
+    "start": "cds-serve"
+  },
+  "cds": {
+    "hana": {
+      "deploy-format": "hdbtable",
+      "syntax": "hdi"
+    },
+    "build": {
+      "tasks": [
+        {
+          "dest": "../db",
+          "for": "hana"
+        },
+        {
+          "for": "node-cf"
+        }
+      ]
+    },
+    "requires": {
+      "db": {
+        "kind": "sql"
+      }
+    }
+  },
+  "devDependencies": {
+    "@sap/cds-dk": "^7",
+    "@sap/ux-specification": "^1.120.6",
+    "rimraf": "^3.0.2"
+  }
+}
