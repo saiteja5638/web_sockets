@@ -2,7 +2,9 @@ var cds = require('@sap/cds');
 const { INSERT, SELECT } = require('@sap/cds/lib/ql/cds-ql');
 var WebSocket = require('ws');
 const axios = require('axios');
-module.exports = async srv =>{
+const os = require('os')
+const process = require('process')
+module.exports = async srv => {
 
     const broadcastUpdate = (wss, data) => {
         wss.clients.forEach(client => {
@@ -11,14 +13,31 @@ module.exports = async srv =>{
             }
         });
     };
-    srv.on('HiTSocket', async(req,res)=>{
+    srv.on('HiTSocket', async (req, res) => {
         try {
 
-            let data1 =  req.data.DATA;
+            const startUsage = process.cpuUsage()
 
-              await callCreateJobFeed(data1)
+            await new Promise(resolve => setTimeout(resolve, 100))
 
-            
+            const endUsage = process.cpuUsage(startUsage)
+            const cpuPercent = (endUsage.user + endUsage.system) / 1000000 // Convert to percentage
+
+            // Get memory usage
+            const memoryUsage = process.memoryUsage()
+            const memoryPercent = (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100
+            //   await callCreateJobFeed(data1)
+
+            let obj = {
+                cpuUsage: parseFloat(cpuPercent),
+                timestamp: new Date(),
+                processId: process.pid.toString(),
+                memoryUsage: parseFloat(memoryPercent.toFixed(2))
+            }
+
+            return obj
+
+
 
             //   broadcastUpdate(global.wss, { action: 'HiTSocket', data: data1 });
         } catch (error) {
@@ -26,28 +45,28 @@ module.exports = async srv =>{
         }
     })
 
-    srv.on('onPost',async (req,res)=>{
+    srv.on('onPost', async (req, res) => {
         try {
-            let ID_  =  Math.floor(Math.random() * 8596 ) + "S";
+            let ID_ = Math.floor(Math.random() * 8596) + "S";
             let obj = {
-                ID:ID_,
-                DATA:req.data.DATA
+                ID: ID_,
+                DATA: req.data.DATA
             }
-           let response = await cds.run(INSERT.into("TABS_E_LEARN").entries(obj))
-           console.log(response)
+            let response = await cds.run(INSERT.into("TABS_E_LEARN").entries(obj))
+            console.log(response)
         } catch (error) {
             console.log("logged")
         }
     })
 
-    srv.on('onWaiting',async (req,res)=>{
-        const jobID = req.data.ID; 
-    
+    srv.on('onWaiting', async (req, res) => {
+        const jobID = req.data.ID;
+
         try {
 
-          
-            let get_file =  await cds.run(`select * from TABS_E_LEARN where ID = '7708S'`)
-            let ID  = get_file[0].ID
+
+            let get_file = await cds.run(`select * from TABS_E_LEARN where ID = '7708S'`)
+            let ID = get_file[0].ID
             let Base64_file = get_file[0].DATA;
             if (!Base64_file) {
                 WebSocket.send(JSON.stringify({ error: 'File not found' }));
@@ -66,7 +85,7 @@ module.exports = async srv =>{
 
                 const chunk = Base64_file.slice(offset, offset + chunkSize);
                 const stringData = chunk.toString('utf8'); // You can use 'ascii', 'utf8', 'base64', etc.
-                
+
                 broadcastUpdate(global.wss, { action: 'onFileTransferChunk', stringData });
                 offset += chunkSize;
                 await new Promise(resolve => setTimeout(resolve, 50));
@@ -78,10 +97,10 @@ module.exports = async srv =>{
             } else {
                 req.reply({ status: 'File transfer interrupted' });
             }
-            
+
 
         } catch (error) {
-            
+
             return {
                 jobID: jobID,
                 status: "Error starting the job",
@@ -93,29 +112,29 @@ module.exports = async srv =>{
     async function getJobStatusFromLogs(jobId) {
         let get = await callCreateJobFeed(jobId);
         console.log("calling")
-  
+
         let get_status = await cds.run(`select * from TABS_GET_JOBS where STATUS = 'PENDING' AND JOB_NAME ='${jobId}'`)
 
 
-        let status = (get_status.length == 0 )? true :false;
+        let status = (get_status.length == 0) ? true : false;
 
-     
-        return status; 
+
+        return status;
     }
 
     function callCreateJobFeed(jobID) {
 
         const url = 'https://060a0275trial-dev-websockects-srv.cfapps.us10-001.hana.ondemand.com/v2/catalog/JOBlogs';
 
-        let data ={
-            ZQUOTATION:"te",
-            VBELN:'t'
+        let data = {
+            ZQUOTATION: "te",
+            VBELN: 't'
         }
 
         let daaa = {
-            ID: Math.floor(Math.random()* 85963 ) +"ws",
-            JOB_NAME:jobID,
-            STATUS:'PENDING'
+            ID: Math.floor(Math.random() * 85963) + "ws",
+            JOB_NAME: jobID,
+            STATUS: 'PENDING'
         }
 
         axios.post(url, daaa,)

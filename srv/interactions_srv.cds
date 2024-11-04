@@ -6,7 +6,7 @@ service Catalog {
     entity tUSER as projection on tabs.user_information;
     entity JOBlogs as projection on tabs.GET_JOBS;
     entity E_LEARN as projection on tabs.E_LEARN;
-    function HiTSocket(DATA : String) returns String;
+    function HiTSocket() returns String;
     function onWaiting(ID:String)              returns String;
     action onPost(DATA:LargeString)
 
